@@ -1,0 +1,40 @@
+service: sls-plugin-log
+frameworkVersion: '1'
+
+plugins:
+  - serverless-plugin-log-subscription
+
+provider:
+  name: aws
+  runtime: python3.8
+  role: Role
+  logRetentionInDays: 14
+
+custom:
+  logSubscription:
+    enabled: true
+    destinationArn: ${env:CW_LOG_ARN}
+  prune:
+    automatic: true
+    number: 3
+
+functions:
+  hello:
+    handler: handler.hello
+
+resources:
+  Resources:
+    Role:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:service}-${self:provider.stage}
+        ManagedPolicyArns: [ "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" ]
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
